@@ -1,0 +1,25 @@
+{
+  "name": "manga_downloader_webscraper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node webscraper.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Blank-Truth/Manga_WebScraper.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Blank-Truth/Manga_WebScraper/issues"
+  },
+  "homepage": "https://github.com/Blank-Truth/Manga_WebScraper#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
