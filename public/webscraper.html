@@ -95,8 +95,24 @@
                     headers: { 'Content-Type': 'application/json' }, // The sticky note!
                     body: JSON.stringify(dataObject)             // The payload
                 });
-                const data = await response.json()
-                console.log("Server responded with:", data)
+                const pdfName = response.headers.get('Chapter-Name')
+                const blob = await response.blob()
+                // 2. CREATE A VIRTUAL URL FOR THE FILE IN THE BROWSER'S MEMORY
+                const downloadUrl = window.URL.createObjectURL(blob);
+
+                // 3. CREATE A FAKE INVISIBLE LINK AND CLICK IT TO TRIGGER DOWNLOAD
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                document.body.appendChild(link);
+                link.download = `${pdfName}.pdf`
+                link.click(); // Force the browser to click the link
+
+                // 4. CLEAN UP THE MEMORY
+                link.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                // console.log("Download complete!");
+                console.log("Server responded with:", blob)
             }
 
             testMyBackend()

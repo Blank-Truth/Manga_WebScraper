@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/Blank-Truth/Manga_WebScraper#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "image-size": "^2.0.2",
+    "pdfkit": "^0.18.0"
   }
 }

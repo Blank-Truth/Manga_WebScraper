@@ -1,15 +1,12 @@
 import puppeteer from "puppeteer";
 import path from "path";
 import fs from  "fs";
-
-// import * as readline from 'node:readline/promises';
-// import { stdin as input, stdout as output } from 'node:process';
-
+import PDFDocument from 'pdfkit'
+import sizeOf from 'image-size'
 import express from 'express'
+
 const app = express()
 const PORT = process.env.PORT || 3000
-
-// const rl = readline.createInterface({ input, output });
 
 // This is a custom function that literally just tells Node to pause
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -18,20 +15,16 @@ app.use(express.static('public'))
 app.use(express.json());
 
 app.post('/api/chapters', (req, res) => {
+    
     const mangaName = req.body.title
     const mangaChapter = req.body.chapter
-    console.log(`I'm scraping ${mangaName} chapter ${mangaChapter}`)
+    console.log(`You're scraping ${mangaName} chapter ${mangaChapter}`)
+
     
     async function scrapeMangaFreak() {
-    
-        // String Formatting Logic
-        // let mangaName = await rl.question("Enter manga name: ")
-        // let mangaChapter = await rl.question("Enter chapter number: ")
-        // rl.close();
-    
+        
         function searchFormatting(title) {
             let position = title.indexOf(" ")
-            // console.log(position)
             if (position !== -1) { // Apparently if .indexOf() cannot find a space it returns -1
                 let formatted = title.slice(0, position)
                 return formatted.toLowerCase()
@@ -64,31 +57,27 @@ app.post('/api/chapters', (req, res) => {
         await page.waitForSelector("input[name='search']")
         await page.type("input[name='search']", Manga, {delay: 100})
         await page.keyboard.press("Enter")
-    
+        
         await page.waitForSelector(".manga_search_item")
         
         await page.click('.manga_search_item a[href*="Manga"]')
         await page.waitForSelector(".manga_series_list")
-    
         
         console.log("Status:", response.status());
         
          // Download Cover Image
-         async function downloadImage(url, filename) {
-             const reply = await fetch(url)
-             const buffer = await reply.arrayBuffer()
+        //  async function downloadImage(url, filename) {
+        //      const reply = await fetch(url)
+        //      const buffer = await reply.arrayBuffer()
              
-             fs.writeFileSync(filename, Buffer.from(buffer))
-            }
+        //      fs.writeFileSync(filename, Buffer.from(buffer))
+        //     }
             
-            const imageUrl = await page.evaluate((searchSlice) => {
-                const img = document.querySelector(`img[src*=${searchSlice}]`)
-            return img ? img.src : null;
-        }, searchFormatting(mangaName))
-        // console.log(imageUrl)
-        
-        
-        await downloadImage(imageUrl, "animePic.jpg")
+        //     const imageUrl = await page.evaluate((searchSlice) => {
+        //         const img = document.querySelector(`img[src*=${searchSlice}]`)
+        //         return img ? img.src : null;
+        // }, searchFormatting(mangaName))
+        // await downloadImage(imageUrl, "animePic.jpg")
         
         await page.click(`.manga_series_list a[href="/Read1_${nameFormatting(mangaName, mangaChapter)}"]`)
         await page.waitForSelector('.slider.round')
@@ -96,51 +85,75 @@ app.post('/api/chapters', (req, res) => {
         await page.click('.slider.round')
         await page.waitForSelector('.prenext.hide')
         
-        
+    
         const jpg = await page.$$eval('[id="gohere"]', (elements) => {
             return elements.map(element => element.src)
         })
-        console.log(jpg)
-        console.log(`No. of chapters: ${jpg.length}`)
+        // console.log(jpg)
+        // console.log(`No. of chapters: ${jpg.length}`)
         
-        
-        // Download Images
-        
+        // Download Chapters
         async function downloadPngs(filename) {
-            const folderName = "../Manga_Folder"
-            const chapterFolderName = nameFormatting(mangaName, mangaChapter)
-            fs.mkdirSync(folderName, {recursive: true})
-            const chapterFolderPath = path.join(folderName, chapterFolderName)
-            fs.mkdirSync(chapterFolderPath, {recursive: true})
-            for (let i=0; i<(filename.length+1); i++) {
-                if (i<filename.length) {
-                    const links = await fetch(filename[i])
-                    // console.log(links)
-                    const fullPath = path.join(chapterFolderPath, filename[i].slice(numFormatting(mangaName, nameFormatting(mangaName, mangaChapter))))
-                    console.log(fullPath)
-                    const buffer = await links.arrayBuffer()
-                    // console.log(buffer)
-                    fs.writeFileSync(fullPath, Buffer.from(buffer))
-                    await delay(3000) // delay for 3000 milliseconds = 3 seconds
-                } else {
+
+            // const folderName = "../Manga_Folder"
+            // const chapterFolderName = nameFormatting(mangaName, mangaChapter)
+            // fs.mkdirSync(folderName, {recursive: true})
+            // const chapterFolderPath = path.join(folderName, chapterFolderName)
+            // fs.mkdirSync(chapterFolderPath, {recursive: true})
+
+            const fileNameLength = filename.length
+            let doc
+            for (let i=0; i<fileNameLength; i++) {
+
+                const links = await fetch(filename[i])
+                const buffer = await links.arrayBuffer()
+                const pics = Buffer.from(buffer)
+                const rawDimensions = sizeOf(pics)
+
+                if (i === 0) {
+                    // Create PDF
+                    doc = new PDFDocument({
+                        autoFirstPage: false,
+                        size: [rawDimensions.width, rawDimensions.height],
+                        margins: 0
+                    })
+                    res.setHeader('Content-Type', 'application/pdf')
+                    res.setHeader('Content-Disposition', `attachment; filename="${nameFormatting(mangaName, mangaChapter)}.pdf"`)
+
+                    // This is a sneaky roundabout method of sending text to the frontend despite content type already being set
+                    res.setHeader('Chapter-Name', `${nameFormatting(mangaName, mangaChapter)}`)
+                    doc.pipe(res)   
+                }
+                if (i<fileNameLength) {
+                    // const fullPath = path.join(chapterFolderPath, filename[i].slice(numFormatting(mangaName, nameFormatting(mangaName, mangaChapter))))
+                    // console.log(fullPath)
+                    // fs.writeFileSync(fullPath, pics)
+                    doc.addPage({
+                        size: [rawDimensions.width, rawDimensions.height],
+                        margin: 0
+                    })
+                    // console.log(`Adding Page ${i}`)
+                    doc.image(pics, 0, 0, { 
+                        width: rawDimensions.width,
+                        height: rawDimensions.height
+                    }) 
+                    // console.log(`Affixing Image ${i}`)
+
+                    await delay(3000) // Delay for 3000 milliseconds = 3 seconds
+
+                } if (i === (jpg.length)-1) {
+                    console.log(`Scraping of ${mangaName} chapter ${mangaChapter} complete!`)
                     await browser.close();
+                    doc.end()
                 }
             }
-        
         }
-        downloadPngs(jpg)
-        
-        
+        downloadPngs(jpg)  
     }
-    
     // Run the scraper
     scrapeMangaFreak();
-
-    return res.status(201).json({message: `Scraping ${mangaName} chapter ${mangaChapter}...`})
-
 })    
 
 app.listen(PORT, () => {
   console.log('Server is running at http://localhost:3000/webscraper.html');
 });
-
