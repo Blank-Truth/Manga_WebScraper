@@ -44,7 +44,7 @@ app.post('/api/chapters', (req, res) => {
         }
     
         // Launch browser 
-        const browser = await puppeteer.launch({headless: false})
+        const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']})
         const page = await browser.newPage()
         
         // Go to the site
