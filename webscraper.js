@@ -96,6 +96,7 @@ app.post('/api/chapters', (req, res) => {
         const jpg = await page.$$eval('[id="gohere"]', (elements) => {
             return elements.map(element => element.src)
         })
+        await browser.close();
         // console.log(jpg)
         // console.log(`No. of chapters: ${jpg.length}`)
         
@@ -114,7 +115,6 @@ app.post('/api/chapters', (req, res) => {
 
                 if (i === (fileNameLength)) {
                     console.log(`Scraping of ${mangaName} chapter ${mangaChapter} complete!`)
-                    await browser.close();
                     doc.end()
                     continue
                 }
