@@ -44,7 +44,10 @@ app.post('/api/chapters', (req, res) => {
         }
     
         // Launch browser 
-        const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080']})
+        const browser = await puppeteer.launch({
+            headless: false, 
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080']
+        })
         const page = await browser.newPage()
 
         // Disguise for Live server
@@ -107,9 +110,16 @@ app.post('/api/chapters', (req, res) => {
 
             const fileNameLength = filename.length
             let doc
-            for (let i=0; i<fileNameLength; i++) {
+            for (let i=0; i<=fileNameLength; i++) {
 
-                const links = await fetch(filename[i])
+                if (i === (fileNameLength)) {
+                    console.log(`Scraping of ${mangaName} chapter ${mangaChapter} complete!`)
+                    await browser.close();
+                    doc.end()
+                    continue
+                }
+
+                const links = await fetch(filename[0])
                 const buffer = await links.arrayBuffer()
                 const pics = Buffer.from(buffer)
                 const rawDimensions = sizeOf(pics)
@@ -142,14 +152,10 @@ app.post('/api/chapters', (req, res) => {
                         height: rawDimensions.height
                     }) 
                     // console.log(`Affixing Image ${i}`)
-
+                    filename.shift()
                     await delay(3000) // Delay for 3000 milliseconds = 3 seconds
 
-                } if (i === (jpg.length)-1) {
-                    console.log(`Scraping of ${mangaName} chapter ${mangaChapter} complete!`)
-                    await browser.close();
-                    doc.end()
-                }
+                } 
             }
         }
         downloadPngs(jpg)  
