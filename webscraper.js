@@ -14,10 +14,20 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 app.use(express.static('public'))
 app.use(express.json());
 
+function checkMemory(milestone) {
+    const memory = process.memoryUsage();
+    // Convert bytes to Megabytes
+    const rss = (memory.rss / 1024 / 1024).toFixed(2); 
+    const heap = (memory.heapUsed / 1024 / 1024).toFixed(2);
+    
+    console.log(`📊 [MEM: ${milestone}] Total RAM: ${rss}MB | Active Data: ${heap}MB`);
+}
+
 app.post('/api/chapters', (req, res) => {
     
     const mangaName = req.body.title
     const mangaChapter = req.body.chapter
+    checkMemory("1. Before Scrape commences")
     console.log(`You're scraping ${mangaName} chapter ${mangaChapter}`)
 
     
@@ -49,6 +59,7 @@ app.post('/api/chapters', (req, res) => {
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080']
         })
         const page = await browser.newPage()
+        checkMemory("2. Puppeteer Opened")
 
         // Disguise for Live server
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -97,6 +108,7 @@ app.post('/api/chapters', (req, res) => {
             return elements.map(element => element.src)
         })
         await browser.close();
+        checkMemory("3. Puppeteer closed")
         // console.log(jpg)
         // console.log(`No. of chapters: ${jpg.length}`)
         
@@ -151,6 +163,7 @@ app.post('/api/chapters', (req, res) => {
                         width: rawDimensions.width,
                         height: rawDimensions.height
                     }) 
+                    checkMemory(`4. Downloaded Page ${i}`)
                     // console.log(`Affixing Image ${i}`)
                     filename.shift()
                     await delay(3000) // Delay for 3000 milliseconds = 3 seconds
