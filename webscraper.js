@@ -1,4 +1,6 @@
-import puppeteer from "puppeteer";
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+
 import path from "path";
 import fs from  "fs";
 import PDFDocument from 'pdfkit'
@@ -13,6 +15,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 app.use(express.static('public'))
 app.use(express.json());
+// Equip the stealth armor
+puppeteer.use(StealthPlugin());
 
 function checkMemory(milestone) {
     const memory = process.memoryUsage();
@@ -67,7 +71,7 @@ app.post('/api/chapters', (req, res) => {
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             const type = req.resourceType();
-                
+
             if (type === 'media' || type === 'font' || type === 'websocket') {
                 req.abort(); 
             } else {
