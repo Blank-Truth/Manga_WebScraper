@@ -60,21 +60,21 @@ app.post('/api/chapters', (req, res) => {
         })
         const page = await browser.newPage()
         
-        await page.setRequestInterception(true);
-        page.on('request', (req) => {
-            const type = req.resourceType();
-
-            if (['document', 'script', 'xhr', 'fetch'].includes(type)) {
-                req.continue(); 
-            } else {
-                req.abort(); 
-            }
-        });
-        checkMemory("2. Puppeteer Opened")
-
         // Disguise for Live server
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
         await page.setViewport({ width: 1920, height: 1080 });
+
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const type = req.resourceType();
+                
+            if (type === 'media' || type === 'font' || type === 'websocket') {
+                req.abort(); 
+            } else {
+                req.continue(); 
+            }
+        });
+        checkMemory("2. Puppeteer Opened")
         
         // Go to the site
         const response = await page.goto("https://ww2.mangafreak.me/", {
