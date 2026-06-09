@@ -1,5 +1,4 @@
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import puppeteer from 'puppeteer'
 
 import path from "path";
 import fs from  "fs";
@@ -16,7 +15,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 app.use(express.static('public'))
 app.use(express.json());
 // Equip the stealth armor
-puppeteer.use(StealthPlugin());
 
 function checkMemory(milestone) {
     const memory = process.memoryUsage();
@@ -58,18 +56,11 @@ app.post('/api/chapters', (req, res) => {
         }
     
         // Launch browser 
-        const browser = await puppeteer.launch({
-            headless: true, 
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--no-zygote',
-                '--disable-accelerated-2d-canvas',
-                '--mute-audio',
-                '--window-size=1920,1080'
-            ]
+
+        const endpointUrl = `wss://chrome.browserless.io?token=2Uftf2q6XMbd87n0688bd26bc15b7663f78503677306d4c1e&stealth=true`;
+
+        const browser = await puppeteer.connect({
+            browserWSEndpoint:endpointUrl
         })
         const page = await browser.newPage()
         
