@@ -56,9 +56,20 @@ app.post('/api/chapters', (req, res) => {
         // Launch browser 
         const browser = await puppeteer.launch({
             headless: true, 
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080']
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080', '--disable-gpu', '--no-first-run', '--no-zygote', '--blink-settings=imagesEnabled=false']
         })
         const page = await browser.newPage()
+        
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const type = req.resourceType();
+
+            if (['document', 'script', 'xhr', 'fetch'].includes(type)) {
+                req.continue(); 
+            } else {
+                req.abort(); 
+            }
+        });
         checkMemory("2. Puppeteer Opened")
 
         // Disguise for Live server
