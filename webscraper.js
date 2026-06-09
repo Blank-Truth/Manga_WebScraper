@@ -60,7 +60,16 @@ app.post('/api/chapters', (req, res) => {
         // Launch browser 
         const browser = await puppeteer.launch({
             headless: true, 
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080', '--disable-gpu', '--no-first-run', '--no-zygote', '--blink-settings=imagesEnabled=false']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-zygote',
+                '--disable-accelerated-2d-canvas',
+                '--mute-audio',
+                '--window-size=1920,1080'
+            ]
         })
         const page = await browser.newPage()
         
@@ -72,12 +81,12 @@ app.post('/api/chapters', (req, res) => {
         page.on('request', (req) => {
             const type = req.resourceType();
 
-            if (type === 'media' || type === 'font' || type === 'websocket') {
+            if (['image', 'media', 'font', 'websocket', 'stylesheet'].includes(type)) {
                 req.abort(); 
-            } else {
-                req.continue(); 
-            }
-        });
+                } else {
+                    req.continue(); 
+                }
+            });
         checkMemory("2. Puppeteer Opened")
         
         // Go to the site
